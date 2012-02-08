@@ -1,0 +1,107 @@
+body {
+    margin:20px;
+    font-family: Verdana, Helvetica, "Lucida Grande", Arial, sans-serif;
+    width:1000px;
+    margin-left:auto;
+    margin-right:auto;
+    text-align:center;
+}
+
+
+
+#header {
+    width:1000px;
+    margin-left:auto;
+    margin-right:auto;
+    text-align:center;
+}
+
+#footer {
+    font-size:12px;
+    width:800px;
+    margin:20px;
+    margin-left:auto;
+    margin-right:auto;
+    text-align:center;
+}
+
+#play, #pause {
+    width:32px;
+    height:32px;
+}
+
+.mbutton {
+    cursor:pointer;
+    opacity: .8;
+}
+
+.mbutton:hover {
+    opacity: 1;
+}
+
+.sinfo {
+    height:22px;
+    margin-bottom:30px;
+}
+
+
+
+#the_list {
+    //margin-left:auto;
+    //margin-left:right;
+    //width:1000px;
+}
+
+
+#tinfo {
+    margin-bottom:20px;
+}
+
+.image {
+    float:left;
+    padding:10px;
+    padding-bottom:6px;
+}
+
+.name {
+    font-size:16px;
+    font-weight:bold;
+}
+
+.ya {
+    font-size:12px;
+    font-weight:bold;
+    padding-top:5px;
+    padding-bottom:4px;
+}
+
+.info {
+    padding-top:10px;
+    margin-left: 20px;
+    padding-right:10px;
+    padding-bottom:10px;
+}
+
+.adiv {
+    margin-top:20px;
+    width:600px;
+    overflow:auto;
+    text-align:left;
+    margin-left:auto;
+    margin-right:auto;
+    border-radius: 15px;
+    border-style:solid;
+    border-width:1px;
+    background-color:#efffff;
+}
+
+#the_rest {
+    width:600px;
+    text-align:left;
+    margin-left:auto;
+    margin-right:auto;
+    border-radius: 15px;
+    border-style:solid;
+    border-width:1px;
+    background-color:#fafafa;
+}

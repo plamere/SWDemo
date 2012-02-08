@@ -1,0 +1,262 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Listen to Top SeatWave artists</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+    <script type="text/javascript" src="js/soundmanager2-nodebug-jsmin.js"></script>
+    <script type="text/javascript" src="sm.js"></script>
+    <link type="text/css" href="styles.css" rel="stylesheet" />
+  </head>
+<body>
+    <h1 id='title'> Listen to Top Seatwave artists</h1>
+    <div id="the_list"> </div>
+    <div id="footer"> Powered by <a href="http:/developer.echonest.com">The Echo nest </a>, <a href='http://seatwave.com'>Seatwave</a>, 
+    and <a href='http://www.7digital.com'>7Digital</a></div>
+</body>
+
+<script type="text/javascript">
+
+
+var en_api_key = 'YOUR_ECHO_NEST_API_KEY';
+var sw_api_key = 'YOUR_SEATWAVE_API_KEY';
+var audioCache = {};
+
+jQuery.ajaxSettings.traditional = true;  
+initSoundManagerPlayer();
+
+
+function fetchTopSeatwaveArtists(start, total) {
+    var url = 'http://developer.echonest.com/api/v4/artist/top_hottt?callback=?';
+
+    // grab the top 100 artists that are in the seatwave catalog, along with their bios and hotttnesss
+    $.getJSON(url, { 'api_key': en_api_key, 'format':'jsonp', 
+            'start': start, 'results': total,  'bucket': ['hotttnesss', 'biographies', 'id:seatwave'], 'limit': true}, function(data) {
+        for (var i = 0; i < data.response.artists.length; i++) {
+            var artist = data.response.artists[i];
+            fetchEventInfo(artist);
+        }
+    });
+}
+
+var simSW = false;
+
+
+function fetchPopularSeatwaveEvents() {
+    var swurl = 'http://api-sandbox.seatwave.com/v2/discovery/genre/1/eventgroups/popular?apikey=' + sw_api_key;
+    var url = 'call?callback=?&q=' + swurl;
+    if (simSW) {
+        var eg = {'ImageURL' : 'http://cdn2.seatwave.com/filestore/season/image/redhotchilipeppers_702_1_1_20110617124457.jpg',
+                   'TicketCount' : 40, 'SwURL' : 'http://www.seatwave.com/buy-jls-tickets/season' }
+        showArtist(artist, eg); 
+    }
+    else {
+        $.getJSON(url, {}, function(data) {
+                for (var i = 0; i < data.EventGroups.length; i++) {
+                    var eventGroup = data.EventGroups[i];
+                    if (eventGroup.TicketCount > 0) {
+                        fetchArtistInfo(eventGroup);
+                    } else {
+                        console.log('no tickets for', artist.name);
+                    }
+                }
+            });
+    }
+}
+
+function fetchArtistInfo(event) {
+    var id = 'seatwave:artist:' + event.Id;
+    var url = 'http://developer.echonest.com/api/v4/artist/profile?callback=?';
+    $.getJSON(url, { 'api_key': en_api_key, 'format':'jsonp', 'id': id,
+              'bucket': ['biographies', 'id:seatwave', 'hotttnesss'] }, function(data)   {
+                var artist = data.response.artist;
+                if (artist) {
+                    showArtist(artist, event);
+                } else {
+                    console.log('no artist for event', event.Name);
+                }
+            }
+    );
+}
+
+
+function fetchEventInfo(artist) {
+    var swid = artist.foreign_ids[0].foreign_id.replace('seatwave:artist:',  '');
+    var url = 'call?callback=?&q=http://api-sandbox.seatwave.com/v2/discovery/eventgroup/' + swid + '?apikey=' + sw_api_key;
+
+    if (simSW) {
+        var eg = {'ImageURL' : 'http://cdn2.seatwave.com/filestore/season/image/redhotchilipeppers_702_1_1_20110617124457.jpg',
+                   'TicketCount' : 40, 'SwURL' : 'http://www.seatwave.com/buy-jls-tickets/season' }
+        showArtist(artist, eg); 
+    }
+    else {
+        $.getJSON(url, {}, function(data) {
+                if (data.EventGroup) {
+                    if (data.EventGroup.TicketCount > 0) {
+                        showArtist(artist, data.EventGroup); 
+                    } else {
+                        console.log('no tickets for', artist.name);
+                    }
+                }
+            });
+    }
+}
+
+function showArtist(artist, eventGroup) {
+    var tgt = $("#the_list");
+    var adiv = $("<div>").attr('class', 'adiv');
+    var info = $("<div>").attr('class', 'info');
+    var elem = $("<li>");
+    var img = $("<img>");
+    var imgUrl = eventGroup.ImageURL;
+    img.attr('src', imgUrl);
+    img.attr('class', 'image');
+
+    info.append($("<div>").attr('class', 'name').text(artist.name));
+
+    info.append($("<br>"));
+
+    var tinfo = $("<div>");
+    tinfo.attr('id', 'tinfo');
+    var tix = $("<div>");
+    tix.attr('class', 'info');
+    tix.text("Tickets available: " + eventGroup.TicketCount);
+
+    var dlink = $("<div>");
+    var link = $("<a>");
+    var url = eventGroup.SwURL;
+    link.attr('href', url);
+    link.text('Get tickets at Seatwave');
+
+    dlink.append(link);
+    tinfo.append(tix);
+    tix.append(dlink);
+
+    var play = $("<img>");
+    play.attr('id', 'play');
+    play.attr('class', 'mbutton');
+    play.attr('src', "play.png");
+
+    var sinfo = $("<div>");
+    sinfo.attr('class', 'sinfo');
+
+
+    play.click(function(event) {
+        playArtist(artist, sinfo);
+        });
+    tinfo.append(play);
+
+    var pause = $("<img>");
+    pause.attr('id',  'pause');
+    pause.attr('class', 'mbutton');
+    pause.attr('src',  'pause.png');
+
+    pause.click(function(event) {
+        audioPause();
+    });
+
+    tinfo.append(play);
+    tinfo.append(pause);
+    tinfo.append(sinfo);
+    info.append(tinfo);
+    info.append(getBio(artist));
+    
+    $("#results").append(elem);
+
+    adiv.append(img);
+    adiv.append(info);
+    adiv.append( $("<br>").attr('clear'));
+    tgt.append(adiv)
+}
+
+function playArtist(artist, div) {
+var id = artist.id;
+    if (id in audioCache) {
+        playSong(audioCache[id], div);
+    } else {
+        fetchAudio(artist, div);
+    }
+}
+
+
+function fetchAudio(artist, div) {
+    var url = 'http://developer.echonest.com/api/v4/song/search?callback=?';
+    $.getJSON(url, { 'api_key': en_api_key, 'format':'jsonp', 'artist_id': artist.id,
+            'sort': 'song_hotttnesss-desc', 
+            'results': 1,  'bucket': ['id:7digital-US', 'tracks'], 'limit': true}, function(data)   {
+                if (data.response.songs.length > 0) {
+                    var song = data.response.songs[0];
+                    audioCache[artist.id] = song;
+                    playSong(song, div);
+                } else {
+                    div.text('no audio');
+                }
+            }
+    );
+}
+
+function error(msg) {
+    console.log(msg);
+}
+
+
+var lastDiv = null;
+function playSong(song, div) {
+    if (lastDiv != null) {
+        lastDiv.text("");
+    }
+    var url = getArtistLandingPage(song.artist_name);
+    div.html("<a href='" + url + "'>" + song.title + "</a>");
+    lastDiv = div;
+    audioPlay(song.tracks[0].preview_url);
+}
+
+function normalizeName(name) {
+    var n = name.toLowerCase();
+    n = n.replace(/ & /g, ' and ');
+    n = n.replace(/'/g, '');
+    n = n.replace(/\W/g, ' ');
+    n = n.trim();
+    n = n.replace(/\s+/g, '-');
+    return n
+}
+
+function getArtistLandingPage(name) {
+    return 'http://www.7digital.com/artists/' + normalizeName(name);
+}
+
+
+function getBio(artist) {
+    if (artist.biographies.length > 0) {
+        var bio = getBioFromSite(artist, 'wikipedia');
+        if (!bio) {
+            bio = getBioFromSite(artist, 'last.fm');
+        }
+
+        if (!bio) {
+            bio = artist.biographies[0].text;
+        }
+        return bio.text.substring(0, 1000) + " ...";
+    } else {
+        return "";
+    }
+}
+
+function getBioFromSite(artist, site) {
+    for (var i = 0; i < artist.biographies.length; i++) {
+        if (artist.biographies[i].site === site) {
+            return artist.biographies[i];
+        }
+    }
+    return null;
+}
+
+
+function audioReady() {
+    fetchPopularSeatwaveEvents();
+}
+
+
+</script>
+</html>
+
